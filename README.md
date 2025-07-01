@@ -78,7 +78,9 @@
 
 - 作者：诺喵
 - QQ：183452584
+- bilibili：白猫诺雪
 - Discord：nuomew
+- QQ群：588605289
 
 ---
 
