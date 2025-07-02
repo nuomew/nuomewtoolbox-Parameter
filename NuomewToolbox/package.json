@@ -1,0 +1,27 @@
+{
+  "name": "com.nyameau.vrchat-avatar-analyzer",
+  "version": "1.0.1",
+  "displayName": "诺喵工具箱 - VRChat模型分析器",
+  "description": "专为VRChat模型优化设计的Unity编辑器工具包，提供模型参数分析、性能检测、纹理内存计算等功能。",
+  "unity": "2019.4",
+  "unityRelease": "0f1",
+  "keywords": [
+    "vrchat",
+    "avatar",
+    "analyzer",
+    "performance",
+    "optimization",
+    "editor",
+    "tool"
+  ],
+  "author": {
+    "name": "Nyameau",
+    "email": "contact@nyameau.com"
+  },
+  "category": "Editor Extensions",
+  "dependencies": {
+    "com.unity.ugui": "1.0.0"
+  },
+  "samples": [],
+  "type": "tool"
+}
