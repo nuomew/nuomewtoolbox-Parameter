@@ -1,0 +1,39 @@
+{
+    "name": "NyameauToolbox.Editor",
+    "rootNamespace": "NyameauToolbox.Editor",
+    "references": [
+        "VRC.SDK3A",
+        "VRC.SDKBase",
+        "VRC.SDK3A.Editor",
+        "VRC.SDK3.Dynamics.PhysBone"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "VRC_SDK_VRCSDK3"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.vrchat.avatars",
+            "expression": "",
+            "define": "VRC_SDK_VRCSDK3"
+        },
+        {
+            "name": "com.vrchat.base",
+            "expression": "",
+            "define": "VRC_SDK_BASE"
+        },
+        {
+            "name": "com.vrchat.worlds",
+            "expression": "",
+            "define": "VRC_SDK_VRCSDK3_WORLDS"
+        }
+    ],
+    "noEngineReferences": false
+} 
