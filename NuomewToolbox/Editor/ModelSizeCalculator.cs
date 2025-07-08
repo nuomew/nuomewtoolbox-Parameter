@@ -1,9 +1,10 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Rendering;
+using UnityEngine.Profiling;
+using VRC.SDK3.Avatars.Components;
 
 namespace NyameauToolbox.Editor
 {
@@ -45,10 +46,9 @@ namespace NyameauToolbox.Editor
 
             var result = new ModelSizeResult();
             
-            // 计算纹理大小
-            var textureResult = TextureMemoryCalculator.CalculateTextureMemory(avatar);
-            result.textureSizeBytes = textureResult.totalMemoryBytes;
-            result.textureSizeMB = textureResult.totalMemoryMB;
+            // 计算纹理大小 - 使用简化版本
+            result.textureSizeBytes = CalculateTextureMemoryForModel(avatar);
+            result.textureSizeMB = result.textureSizeBytes / (1024f * 1024f);
 
             // 计算网格大小
             var meshResult = CalculateMeshSize(avatar);
@@ -75,10 +75,9 @@ namespace NyameauToolbox.Editor
 
             var result = new ModelSizeResult();
             
-            // 计算纹理大小（活动状态）
-            var textureResult = TextureMemoryCalculator.CalculateTextureMemory(avatar);
-            result.textureSizeBytes = textureResult.activeMemoryBytes; // 只使用活动纹理的内存
-            result.textureSizeMB = textureResult.activeMemoryMB;      // 只使用活动纹理的内存
+            // 计算纹理大小（活动状态）- 使用简化版本
+            result.textureSizeBytes = CalculateActiveTextureMemoryForModel(avatar);
+            result.textureSizeMB = result.textureSizeBytes / (1024f * 1024f);
 
             // 计算网格大小（仅活动状态）
             var meshResult = CalculateActiveMeshSize(avatar);
@@ -163,8 +162,18 @@ namespace NyameauToolbox.Editor
                 });
             }
             
-            // 按大小排序
-            meshInfos.Sort((m1, m2) => m2.sizeBytes.CompareTo(m1.sizeBytes));
+            // 按大小排序，如果大小相同则随机排列
+            var random = new System.Random();
+            meshInfos.Sort((m1, m2) => 
+            {
+                int sizeComparison = m2.sizeBytes.CompareTo(m1.sizeBytes);
+                if (sizeComparison == 0)
+                {
+                    // 大小相同时随机排列
+                    return random.Next(-1, 2);
+                }
+                return sizeComparison;
+            });
             
             result.totalSizeMB = result.totalSizeBytes / (1024f * 1024f);
             result.meshInfos = meshInfos;
@@ -243,8 +252,18 @@ namespace NyameauToolbox.Editor
                 meshInfos.Add(meshInfo);
             }
 
-            // 按大小排序
-            meshInfos.Sort((m1, m2) => m2.sizeBytes.CompareTo(m1.sizeBytes));
+            // 按大小排序，如果大小相同则随机排列
+            var random = new System.Random();
+            meshInfos.Sort((m1, m2) => 
+            {
+                int sizeComparison = m2.sizeBytes.CompareTo(m1.sizeBytes);
+                if (sizeComparison == 0)
+                {
+                    // 大小相同时随机排列
+                    return random.Next(-1, 2);
+                }
+                return sizeComparison;
+            });
 
             result.totalSizeBytes = totalSizeBytes;
             result.totalSizeMB = totalSizeBytes / (1024f * 1024f);
@@ -321,6 +340,87 @@ namespace NyameauToolbox.Editor
             bytes = vertexAttributeVRAMSize * mesh.vertexCount + blendShapeVRAMSize;
             meshSizeCache[mesh] = bytes;
             return bytes;
+        }
+
+        /// <summary>
+        /// 计算所有纹理内存占用（简化版本）
+        /// </summary>
+        private static long CalculateTextureMemoryForModel(GameObject avatar)
+        {
+            if (avatar == null) return 0;
+            
+            try
+            {
+                var allTextures = avatar.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(r => r.sharedMaterials)
+                    .Where(m => m != null)
+                    .SelectMany(m => GetTexturesFromMaterial(m))
+                    .Distinct()
+                    .Where(t => t != null);
+
+                long totalSize = 0;
+                foreach (var texture in allTextures)
+                {
+                    totalSize += Profiler.GetRuntimeMemorySizeLong(texture);
+                }
+                
+                return totalSize;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[ModelSizeCalculator] 计算纹理内存时出错: {e.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// 计算活动纹理内存占用（简化版本）
+        /// </summary>
+        private static long CalculateActiveTextureMemoryForModel(GameObject avatar)
+        {
+            if (avatar == null) return 0;
+            
+            try
+            {
+                var activeTextures = avatar.GetComponentsInChildren<Renderer>(false)
+                    .SelectMany(r => r.sharedMaterials)
+                    .Where(m => m != null)
+                    .SelectMany(m => GetTexturesFromMaterial(m))
+                    .Distinct()
+                    .Where(t => t != null);
+
+                long totalSize = 0;
+                foreach (var texture in activeTextures)
+                {
+                    totalSize += Profiler.GetRuntimeMemorySizeLong(texture);
+                }
+                
+                return totalSize;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[ModelSizeCalculator] 计算活动纹理内存时出错: {e.Message}");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// 从材质中获取所有纹理
+        /// </summary>
+        private static IEnumerable<Texture> GetTexturesFromMaterial(Material material)
+        {
+            if (material == null || material.shader == null) yield break;
+            
+            int[] textureIds = material.GetTexturePropertyNameIDs();
+            foreach (int id in textureIds)
+            {
+                if (material.HasProperty(id))
+                {
+                    Texture texture = material.GetTexture(id);
+                    if (texture != null)
+                        yield return texture;
+                }
+            }
         }
 
         /// <summary>
