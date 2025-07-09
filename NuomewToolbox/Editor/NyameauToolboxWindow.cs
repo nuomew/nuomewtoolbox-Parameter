@@ -32,6 +32,13 @@ namespace NyameauToolbox.Editor
             },
             new ToolInfo
             {
+                name = "网格删除器",
+                description = "基于纹理的网格删除工具\n• 可视化纹理编辑\n• 精确网格删除\n• 实时预览效果\n• 支持多种绘制模式",
+                icon = "✂️",
+                action = () => MeshDeleterWindow.ShowWindow()
+            },
+            new ToolInfo
+            {
                 name = "模型优化建议",
                 description = "为您的VRChat模型提供优化建议\n• 纹理压缩建议\n• 网格优化提示\n• 性能优化指南",
                 icon = "⚡",
@@ -51,7 +58,7 @@ namespace NyameauToolbox.Editor
         public static void ShowWindow()
         {
             var window = GetWindow<NyameauToolboxWindow>("诺喵工具箱");
-            window.minSize = new Vector2(500, 400);
+            window.minSize = new Vector2(350, 300);
             window.Show();
         }
         
@@ -142,7 +149,7 @@ namespace NyameauToolbox.Editor
             EditorGUILayout.BeginHorizontal();
             
             // 图标和标题
-            EditorGUILayout.BeginVertical(GUILayout.Width(60));
+            EditorGUILayout.BeginVertical(GUILayout.Width(80));
             GUILayout.Label(tool.icon, new GUIStyle(EditorStyles.boldLabel) 
             { 
                 fontSize = 24, 
@@ -151,7 +158,7 @@ namespace NyameauToolbox.Editor
             EditorGUILayout.EndVertical();
             
             // 工具信息
-            EditorGUILayout.BeginVertical();
+            EditorGUILayout.BeginVertical(GUILayout.MinWidth(120), GUILayout.ExpandWidth(true));
             
             EditorGUILayout.LabelField(tool.name, new GUIStyle(EditorStyles.boldLabel) 
             { 
@@ -163,7 +170,7 @@ namespace NyameauToolbox.Editor
             EditorGUILayout.EndVertical();
             
             // 启动按钮
-            EditorGUILayout.BeginVertical(GUILayout.Width(80));
+            EditorGUILayout.BeginVertical(GUILayout.Width(100));
             GUI.backgroundColor = primaryColor;
             
             if (GUILayout.Button("启动", buttonStyle))
@@ -204,7 +211,7 @@ namespace NyameauToolbox.Editor
             
             GUILayout.FlexibleSpace();
             
-            GUILayout.Label("版本: 1.0.2", EditorStyles.miniLabel);
+            GUILayout.Label("版本: 1.0.5", EditorStyles.miniLabel);
             
             EditorGUILayout.EndHorizontal();
             

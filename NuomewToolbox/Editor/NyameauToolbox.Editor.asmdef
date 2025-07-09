@@ -5,7 +5,8 @@
         "VRC.SDK3A",
         "VRC.SDKBase",
         "VRC.SDK3A.Editor",
-        "VRC.SDK3.Dynamics.PhysBone"
+        "VRC.SDK3.Dynamics.PhysBone",
+        "net.gatosyocora.meshdeleterwithtexture.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -36,4 +37,4 @@
         }
     ],
     "noEngineReferences": false
-} 
+}
