@@ -253,6 +253,11 @@ namespace Gatosyocora.MeshDeleterWithTexture.Views
                 };
                 materials[materialInfo.MaterialSlotIndices[0]] = previewMaterial;
                 renderer.sharedMaterials = materials;
+                
+                // 强制刷新场景视图以显示预览材质
+#if UNITY_EDITOR
+                UnityEditor.SceneView.RepaintAll();
+#endif
             }
             ResetScrollOffsetAndZoomScale();
         }
@@ -284,6 +289,10 @@ namespace Gatosyocora.MeshDeleterWithTexture.Views
         public void ClearAllDrawing()
         {
             ClearAllDrawing(materialInfo);
+            // 强制刷新场景视图以显示清除后的效果
+#if UNITY_EDITOR
+            UnityEditor.SceneView.RepaintAll();
+#endif
         }
 
         /// <summary>
@@ -295,7 +304,14 @@ namespace Gatosyocora.MeshDeleterWithTexture.Views
             ZoomScale = 1;
         }
 
-        public void InverseFillArea() => canvasModel.InverseCanvasMarks();
+        public void InverseFillArea()
+        {
+            canvasModel.InverseCanvasMarks();
+            // 强制刷新场景视图以实时显示变化
+#if UNITY_EDITOR
+            UnityEditor.SceneView.RepaintAll();
+#endif
+        }
 
         /// <summary>
         /// 削除する場所のデータを取得
@@ -310,12 +326,23 @@ namespace Gatosyocora.MeshDeleterWithTexture.Views
 
         public void RegisterUndoTexture() => undo.RegisterUndoTexture(previewTexture, canvasModel.buffer);
 
-        public void UndoPreviewTexture() => undo.UndoPreviewTexture(ref previewTexture, ref canvasModel.buffer);
+        public void UndoPreviewTexture()
+        {
+            undo.UndoPreviewTexture(ref previewTexture, ref canvasModel.buffer);
+            // 强制刷新场景视图以实时显示撤销变化
+#if UNITY_EDITOR
+            UnityEditor.SceneView.RepaintAll();
+#endif
+        }
 
         public void ApplySelectArea()
         {
             var selectAreaData = selectArea.GetFillArea();
             canvasModel.MarkArea(selectAreaData);
+            // 强制刷新场景视图以实时显示变化
+#if UNITY_EDITOR
+            UnityEditor.SceneView.RepaintAll();
+#endif
         }
 
         public void Dispose()
@@ -373,13 +400,27 @@ namespace Gatosyocora.MeshDeleterWithTexture.Views
         /// ペン
         /// </summary>
         /// <param name="pos"></param>
-        private void DrawOnTexture(Vector2Int pos) => canvasModel.Mark(pos);
+        private void DrawOnTexture(Vector2Int pos)
+        {
+            canvasModel.Mark(pos);
+            // 强制刷新场景视图以实时显示画笔影响区域
+#if UNITY_EDITOR
+            UnityEditor.SceneView.RepaintAll();
+#endif
+        }
 
         /// <summary>
         /// 消しゴム
         /// </summary>
         /// <param name="pos"></param>
-        private void ClearOnTexture(Vector2Int pos) => canvasModel.UnMark(pos);
+        private void ClearOnTexture(Vector2Int pos)
+        {
+            canvasModel.UnMark(pos);
+            // 强制刷新场景视图以实时显示画笔影响区域
+#if UNITY_EDITOR
+            UnityEditor.SceneView.RepaintAll();
+#endif
+        }
 
         // Textureのuv座標的にどの範囲が表示されているかを元に補正している
         private Vector2Int ConvertWindowPosToTexturePos(Vector2Int textureSize, Vector2 windowPos, Rect rect, float zoomScale, Vector2 scrollOffset)

@@ -331,7 +331,7 @@ namespace NyameauToolbox.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             
             GUILayout.Label("🌸 诺喵工具箱 🌸", headerStyle);
-            GUILayout.Label("VRChat模型参数统计 V1.0.5 By.诺喵", EditorStyles.centeredGreyMiniLabel);
+            GUILayout.Label("VRChat模型参数统计 V1.0.6 By.诺喵", EditorStyles.centeredGreyMiniLabel);
             
             EditorGUILayout.EndVertical();
             GUI.backgroundColor = Color.white;

@@ -211,7 +211,7 @@ namespace NyameauToolbox.Editor
             
             GUILayout.FlexibleSpace();
             
-            GUILayout.Label("版本: 1.0.5", EditorStyles.miniLabel);
+            GUILayout.Label("版本: 1.0.6", EditorStyles.miniLabel);
             
             EditorGUILayout.EndHorizontal();
             
