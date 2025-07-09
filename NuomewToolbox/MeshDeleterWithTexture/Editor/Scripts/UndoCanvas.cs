@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace Gatosyocora.MeshDeleterWithTexture
@@ -23,10 +23,34 @@ namespace Gatosyocora.MeshDeleterWithTexture
         /// <param name="texture"></param>
         public void RegisterUndoTexture(RenderTexture texture, ComputeBuffer buffer)
         {
+            if (texture == null)
+            {
+                Debug.LogError("RegisterUndoTexture: Input texture is null");
+                return;
+            }
+
             undoIndex++;
             if (undoIndex >= MAX_UNDO_COUNT) undoIndex = 0;
+            
             var undoTexture = new RenderTexture(texture);
-            Graphics.CopyTexture(texture, undoTexture);
+            
+            // 确保RenderTexture正确创建
+            if (!undoTexture.Create())
+            {
+                Debug.LogError("Failed to create undo RenderTexture");
+                return;
+            }
+            
+            try
+            {
+                Graphics.CopyTexture(texture, undoTexture);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"Graphics.CopyTexture failed in RegisterUndoTexture: {e.Message}. Using Graphics.Blit as fallback.");
+                Graphics.Blit(texture, undoTexture);
+            }
+            
             undoTextures[undoIndex] = undoTexture;
             var undoBuffer = new int[texture.width * texture.height];
             buffer.GetData(undoBuffer);
@@ -44,7 +68,17 @@ namespace Gatosyocora.MeshDeleterWithTexture
             var undoTexture = undoTextures[undoIndex];
             var undoBuffer = undoBuffers[undoIndex];
             undoIndex--;
-            Graphics.CopyTexture(undoTexture, previewTexture);
+            
+            try
+            {
+                Graphics.CopyTexture(undoTexture, previewTexture);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"Graphics.CopyTexture failed in UndoPreviewTexture: {e.Message}. Using Graphics.Blit as fallback.");
+                Graphics.Blit(undoTexture, previewTexture);
+            }
+            
             buffer.SetData(undoBuffer);
         }
 

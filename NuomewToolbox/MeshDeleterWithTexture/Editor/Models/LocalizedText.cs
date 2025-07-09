@@ -15,6 +15,8 @@ namespace Gatosyocora.MeshDeleterWithTexture.Models
 
         public LocalizedText()
         {
+            // 清理可能存在的无效语言设置
+            CleanupInvalidLanguageSettings();
             SelectedLanguage = LoadLanguage();
             SetLanguage(SelectedLanguage);
         }
@@ -54,12 +56,21 @@ namespace Gatosyocora.MeshDeleterWithTexture.Models
                 return Language.CN; // 默认使用中文
             }
 
-            var obj = Enum.Parse(typeof(Language), languageString);
-            if (obj != null)
+            try
             {
-                return (Language)obj;
-            } else
+                if (Enum.TryParse<Language>(languageString, out Language result))
+                {
+                    return result;
+                }
+                else
+                {
+                    Debug.LogWarning($"[网格删除器] 无法解析语言设置 '{languageString}'，使用默认中文");
+                    return Language.CN;
+                }
+            }
+            catch (Exception ex)
             {
+                Debug.LogError($"[网格删除器] 加载语言设置时发生错误: {ex.Message}");
                 return Language.CN; // 默认使用中文
             }
         }
@@ -67,6 +78,23 @@ namespace Gatosyocora.MeshDeleterWithTexture.Models
         private void SaveLanguage()
         {
             EditorUserSettings.SetConfigValue(LOCAL_DATA_KEY, SelectedLanguage.ToString());
+        }
+
+        /// <summary>
+        /// 清理无效的语言设置，确保只使用支持的语言
+        /// </summary>
+        private void CleanupInvalidLanguageSettings()
+        {
+            var languageString = EditorUserSettings.GetConfigValue(LOCAL_DATA_KEY);
+            if (!string.IsNullOrEmpty(languageString))
+            {
+                // 检查是否为支持的语言值
+                if (!Enum.TryParse<Language>(languageString, out Language _))
+                {
+                    Debug.Log("[网格删除器] 插件加载完成");
+                    EditorUserSettings.SetConfigValue(LOCAL_DATA_KEY, Language.CN.ToString());
+                }
+            }
         }
     }
 }
