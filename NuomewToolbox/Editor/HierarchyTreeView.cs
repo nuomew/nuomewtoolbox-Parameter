@@ -247,7 +247,7 @@ namespace NyameauToolbox.Editor
         /// <summary>
         /// 切换功能开关
         /// </summary>
-        [MenuItem("诺喵工具箱/层级视觉增强/启用树状结构显示", false, 100)]
+        [MenuItem("诺喵工具箱/层级视觉增强/启用树状结构显示", false, 1)]
         public static void ToggleTreeView()
         {
             isEnabled = !isEnabled;

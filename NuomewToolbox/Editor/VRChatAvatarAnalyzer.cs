@@ -40,6 +40,20 @@ namespace NyameauToolbox.Editor
         private bool showMeshCompression = false;
         private Dictionary<string, bool> meshFoldoutStates = new Dictionary<string, bool>();
         
+        // 动骨详细信息相关
+        private bool showDetailedDynamicBoneInfo = false;
+        private Vector2 dynamicBoneScrollPosition;
+        private Vector2 colliderScrollPosition;
+        
+        // 动骨分组统计数据结构
+        private class DynamicBoneGroupStats
+        {
+            public int physBoneCount;
+            public int colliderCount;
+            public int totalCount => physBoneCount + colliderCount;
+        }
+        private Dictionary<string, bool> dynamicBoneFoldoutStates = new Dictionary<string, bool>();
+        
         // 层级文件树状结构相关
         private bool showHierarchyTree = false;
         private Vector2 hierarchyScrollPosition;
@@ -226,10 +240,10 @@ namespace NyameauToolbox.Editor
         private Color warningColor = new Color(1f, 0.6f, 0.6f, 1f);   // 红色警告
         private Color safeColor = new Color(0.7f, 1f, 0.7f, 1f);      // 绿色安全
         
-        [MenuItem("诺喵工具箱/VRChat模型分析器")]
+        [MenuItem("诺喵工具箱/模型分析器", false, 12)]
         public static void ShowWindow()
         {
-            var window = GetWindow<VRChatAvatarAnalyzer>("诺喵工具箱 - VRChat模型分析器");
+            var window = GetWindow<VRChatAvatarAnalyzer>("诺喵工具箱 - 模型分析器");
             window.minSize = new Vector2(350, 500);
             window.Show();
         }
@@ -254,7 +268,7 @@ namespace NyameauToolbox.Editor
                 }
                 else
                 {
-                    Debug.Log("[诺喵工具箱] 解密功能验证成功。");
+                    Debug.Log("[诺喵工具箱] 验证成功。");
                 }
             }
             catch (System.Exception ex)
@@ -331,7 +345,7 @@ namespace NyameauToolbox.Editor
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             
             GUILayout.Label("🌸 诺喵工具箱 🌸", headerStyle);
-            GUILayout.Label("VRChat模型参数统计 V1.0.6 By.诺喵", EditorStyles.centeredGreyMiniLabel);
+            GUILayout.Label("VRChat模型参数统计 V1.0.7 By.诺喵", EditorStyles.centeredGreyMiniLabel);
             
             EditorGUILayout.EndVertical();
             GUI.backgroundColor = Color.white;
@@ -497,6 +511,9 @@ namespace NyameauToolbox.Editor
             // 层级文件树状结构
             DrawHierarchyTree();
             
+            // 动骨详细信息
+            DrawDynamicBoneDetails();
+            
             // 纹理详细信息
             DrawTextureDetails();
             
@@ -532,6 +549,60 @@ namespace NyameauToolbox.Editor
             
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(5);
+        }
+        
+        /// <summary>
+        /// 获取按Avatar子物体分组的动骨统计信息
+        /// </summary>
+        private Dictionary<string, DynamicBoneGroupStats> GetGroupedDynamicBoneStats()
+        {
+            var groupedStats = new Dictionary<string, DynamicBoneGroupStats>();
+            
+            if (analysisResult?.dynamicBoneInfo == null) return groupedStats;
+            
+            // 统计PhysBone组件
+            foreach (var physBone in analysisResult.dynamicBoneInfo.detectedPhysBones)
+            {
+                string groupKey = GetAvatarChildGroupKey(physBone.gameObjectPath);
+                if (!groupedStats.ContainsKey(groupKey))
+                {
+                    groupedStats[groupKey] = new DynamicBoneGroupStats();
+                }
+                groupedStats[groupKey].physBoneCount++;
+            }
+            
+            // 统计PhysBoneCollider组件
+            foreach (var collider in analysisResult.dynamicBoneInfo.detectedColliders)
+            {
+                string groupKey = GetAvatarChildGroupKey(collider.gameObjectPath);
+                if (!groupedStats.ContainsKey(groupKey))
+                {
+                    groupedStats[groupKey] = new DynamicBoneGroupStats();
+                }
+                groupedStats[groupKey].colliderCount++;
+            }
+            
+            return groupedStats;
+        }
+        
+        /// <summary>
+        /// 从完整路径中提取Avatar的直接子物体名称作为分组键
+        /// </summary>
+        private string GetAvatarChildGroupKey(string fullPath)
+        {
+            if (string.IsNullOrEmpty(fullPath)) return "未知";
+            
+            // 分割路径
+            string[] pathParts = fullPath.Split('/');
+            
+            // 如果路径长度小于2，说明就在Avatar根目录下
+            if (pathParts.Length < 2)
+            {
+                return pathParts.Length > 0 ? pathParts[0] : "未知";
+            }
+            
+            // 返回Avatar的直接子物体名称（第二个路径部分）
+            return pathParts[1];
         }
         
         private float CalculateOverallScore()
@@ -667,6 +738,125 @@ namespace NyameauToolbox.Editor
             EditorGUILayout.LabelField($"总顶点数: {analysisResult.modelSize.vertexCount:N0}");
             EditorGUILayout.LabelField($"总三角形数: {analysisResult.modelSize.triangleCount:N0}");
             EditorGUILayout.LabelField($"当前模型动骨组件总数: {analysisResult.dynamicBoneCount}个");
+            
+            EditorGUILayout.EndVertical();
+            EditorGUILayout.Space(5);
+        }
+        
+        private void DrawDynamicBoneDetails()
+        {
+            EditorGUILayout.BeginVertical();
+            
+            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+            EditorGUILayout.LabelField("动骨详细信息", titleStyle);
+            
+            if (GUILayout.Button(showDetailedDynamicBoneInfo ? "隐藏" : "显示", 
+                GUILayout.Width(60)))
+            {
+                showDetailedDynamicBoneInfo = !showDetailedDynamicBoneInfo;
+            }
+            EditorGUILayout.EndHorizontal();
+            
+            if (showDetailedDynamicBoneInfo && analysisResult != null && analysisResult.dynamicBoneInfo != null)
+            {
+                EditorGUILayout.Space(5);
+                
+                // 动骨总览信息
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField("🦴 动骨组件总览", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField($"VRC (动骨组件)PhysBone 组件: {analysisResult.dynamicBoneInfo.physBoneCount} 个");
+                EditorGUILayout.LabelField($"VRC (碰撞体组件)PhysBoneCollider 组件: {analysisResult.dynamicBoneInfo.physBoneColliderCount} 个");
+                EditorGUILayout.LabelField($"受影响的变换数量: {analysisResult.dynamicBoneInfo.affectedTransformsCount} 个");
+                EditorGUILayout.LabelField($"总计算数量: {analysisResult.dynamicBoneInfo.totalCount} 个");
+                EditorGUILayout.EndVertical();
+                
+                EditorGUILayout.Space(5);
+                
+                // 按Avatar子物体分组的动骨统计
+                if (analysisResult.dynamicBoneInfo.detectedPhysBones.Count > 0 || analysisResult.dynamicBoneInfo.detectedColliders.Count > 0)
+                {
+                    EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                    
+                    string groupedKey = "grouped_dynamic_bones";
+                    if (!dynamicBoneFoldoutStates.ContainsKey(groupedKey))
+                        dynamicBoneFoldoutStates[groupedKey] = false;
+                    
+                    dynamicBoneFoldoutStates[groupedKey] = EditorGUILayout.Foldout(
+                        dynamicBoneFoldoutStates[groupedKey], 
+                        $"🦴 动骨组件分布统计",
+                        true);
+                    
+                    if (dynamicBoneFoldoutStates[groupedKey])
+                    {
+                        dynamicBoneScrollPosition = EditorGUILayout.BeginScrollView(
+                            dynamicBoneScrollPosition, GUILayout.MinHeight(400), GUILayout.MaxHeight(800));
+                        
+                        // 统计每个Avatar直接子物体的动骨占用
+                        var groupedStats = GetGroupedDynamicBoneStats();
+                        
+                        foreach (var group in groupedStats.OrderByDescending(g => g.Value.totalCount))
+                        {
+                            EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
+                            
+                            // 图标和名称
+                            EditorGUILayout.LabelField("📁", GUILayout.Width(20));
+                            EditorGUILayout.BeginVertical();
+                            EditorGUILayout.LabelField($"物体: {group.Key}", EditorStyles.boldLabel);
+                            
+                            // 统计信息
+                            if (group.Value.physBoneCount > 0)
+                            {
+                                EditorGUILayout.LabelField($"  🦴 (动骨组件)PhysBone: {group.Value.physBoneCount} 个", EditorStyles.miniLabel);
+                            }
+                            if (group.Value.colliderCount > 0)
+                            {
+                                EditorGUILayout.LabelField($"  🛡️ (碰撞体组件)PhysBoneCollider: {group.Value.colliderCount} 个", EditorStyles.miniLabel);
+                            }
+                            
+                            EditorGUILayout.EndVertical();
+                            
+                            // 总计数字
+                            EditorGUILayout.LabelField($"{group.Value.totalCount}", EditorStyles.boldLabel, GUILayout.Width(40));
+                            
+                            EditorGUILayout.EndHorizontal();
+                        }
+                        
+                        EditorGUILayout.EndScrollView();
+                    }
+                    
+                    EditorGUILayout.EndVertical();
+                }
+                
+
+                
+                // 性能建议
+                EditorGUILayout.Space(5);
+                EditorGUILayout.BeginVertical(EditorStyles.helpBox);
+                EditorGUILayout.LabelField("💡 性能建议", EditorStyles.boldLabel);
+                
+                if (analysisResult.dynamicBoneInfo.totalCount > VRChatParameterCalculator.MAX_DYNAMIC_BONES)
+                {
+                    EditorGUILayout.LabelField("⚠️ 动骨数量超出VRChat限制，建议减少动骨组件数量", warningStyle);
+                }
+                else if (analysisResult.dynamicBoneInfo.totalCount > VRChatParameterCalculator.MAX_DYNAMIC_BONES * 0.8f)
+                {
+                    EditorGUILayout.LabelField("⚠️ 动骨数量接近限制，建议优化动骨配置", warningStyle);
+                }
+                else
+                {
+                    EditorGUILayout.LabelField("✅ 动骨数量在合理范围内", normalStyle);
+                }
+                
+                EditorGUILayout.LabelField("• 合并相似的动骨组件可以提升性能", smallStyle);
+                EditorGUILayout.LabelField("• 减少不必要的碰撞体可以降低计算开销", smallStyle);
+                EditorGUILayout.LabelField("• 适当调整动骨参数可以在效果和性能间取得平衡", smallStyle);
+                
+                EditorGUILayout.EndVertical();
+            }
+            else if (showDetailedDynamicBoneInfo)
+            {
+                EditorGUILayout.LabelField("暂无动骨详细信息，请先进行模型分析", EditorStyles.centeredGreyMiniLabel);
+            }
             
             EditorGUILayout.EndVertical();
             EditorGUILayout.Space(5);

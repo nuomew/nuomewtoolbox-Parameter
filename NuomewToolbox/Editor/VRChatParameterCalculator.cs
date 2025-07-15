@@ -1040,6 +1040,34 @@ namespace NyameauToolbox.Editor
             result.totalCount = result.physBoneCount;
             result.affectedTransformsCount = result.physBoneCount;
             
+            // 填充详细信息列表
+            foreach (var component in physBoneComponents)
+            {
+                if (component != null)
+                {
+                    string fullPath = GetFullTransformPath(component.transform, avatar.transform);
+                    result.detectedPhysBones.Add(new PhysBoneInfo
+                    {
+                        name = component.name,
+                        gameObjectPath = fullPath,
+                        rootTransform = component.transform.name
+                    });
+                }
+            }
+            
+            foreach (var component in physBoneColliderComponents)
+            {
+                if (component != null)
+                {
+                    string fullPath = GetFullTransformPath(component.transform, avatar.transform);
+                    result.detectedColliders.Add(new PhysBoneColliderInfo
+                    {
+                        name = component.name,
+                        gameObjectPath = fullPath
+                    });
+                }
+            }
+            
             Debug.Log($"[诺喵工具箱] 🆘 手动搜索发现:");
             Debug.Log($"  PhysBone组件: {result.physBoneCount} 个");
             Debug.Log($"  PhysBoneCollider组件: {result.physBoneColliderCount} 个");

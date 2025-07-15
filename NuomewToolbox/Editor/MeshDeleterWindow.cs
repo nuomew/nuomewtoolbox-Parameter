@@ -27,7 +27,7 @@ namespace NyameauToolbox.Editor
         private GUIStyle headerStyle;
         private Color primaryColor = new Color(1f, 0.75f, 0.85f, 1f);   // 粉色主题
         
-        [MenuItem("诺喵工具箱/网格删除器")]
+        [MenuItem("诺喵工具箱/网格删除器", false, 15)]
         public static void ShowWindow()
         {
             var window = GetWindow<MeshDeleterWindow>("网格删除器 - 诺喵工具箱");
